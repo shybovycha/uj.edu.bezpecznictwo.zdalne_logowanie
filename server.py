@@ -1,6 +1,7 @@
 import socket
 import md5
 import threading
+import pickle
 
 def encode_password(password):
     return md5.new(password).digest()
@@ -69,8 +70,28 @@ class MyClient(threading.Thread):
         print "New client is connected!"
 
     def run(self):
-        print "user1 : abc123 = %s" % User.check_login("user1", "abc123")
-        print "user1 : abc125 = %s" % User.check_login("user1", "abc125")
+        while True:
+            data_str = self.socket.recv(self.buf_size)
+
+            # empty data received
+            if not data_str:
+                break
+
+            data = pickle.loads(data_str)
+
+            if not ("command" in data):
+                raise Exception("Invalid packet")
+
+            if (data["command"] == "login"):
+                if not ("username" in data and "password" in data):
+                    raise Exception("Invalid login arguments")
+
+                is_login_correct = User.check_login(data["username"], data["password"])
+
+                if (is_login_correct):
+                    self.socket.send("ok")
+                else:
+                    self.socket.send("error")
 
         # on exit
         self.socket.close()

@@ -1,5 +1,5 @@
 import socket
-import md5
+import pickle
 
 class MyClient:
     def __init__(self, host = 'localhost', port = 5000):
@@ -11,23 +11,20 @@ class MyClient:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect((host, port))
 
-    def encode_password(self, password):
-        return md5.new(password).digest()
-
     def login(self, username, password):
         self.is_logged_in = False
 
-        command = "LOGIN '%s' : '%s'" % (username, self.encode_password(password))
+        command = pickle.dumps({ "command": "login", "username": username, "password": password })
 
         self.socket.send(command)
         response = self.socket.recv(self.buf_size)
 
-        if response == 'OK':
+        if response == 'ok':
             self.is_logged_in = True
 
+        return self.is_logged_in
+
     def run(self):
-        #self.socket.send('Hello, world')
-        #data = self.socket.recv(self.buf_size)
         print "user1 : abc123 = %s" % self.login("user1", "abc123")
         print "user1 : abc124 = %s" % self.login("user1", "abc124")
 
